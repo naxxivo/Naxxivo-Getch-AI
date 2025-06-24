@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naxxivo - Getch AI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #2a0040 0%, #000000 100%); /* Dark purple to black */
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        .container {
+            background-color: #1a1a2e; /* Darker purple-blue */
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(160, 32, 240, 0.3); /* Strong shadow with purple glow */
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 600px; /* Standard chat width */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #a020f0; /* Bright purple */
+            text-shadow: 0 0 15px rgba(160, 32, 240, 0.8);
+            margin-bottom: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .chat-area {
+            background-color: #0f0f1c; /* Even darker for chat background */
+            border-radius: 10px;
+            padding: 1rem;
+            height: 400px; /* Fixed height for chat scroll */
+            overflow-y: auto; /* Scrollable */
+            width: 100%;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(160, 32, 240, 0.2);
+            box-shadow: inset 0 0 8px rgba(160, 32, 240, 0.1);
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        .chat-message.user {
+            justify-content: flex-end;
+        }
+        .chat-message.ai {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 0.8rem 1.2rem;
+            border-radius: 18px; /* More rounded bubbles */
+            line-height: 1.4;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .message-bubble.user {
+            background-color: #6a0dad; /* Purple for user */
+            color: white;
+            border-bottom-right-radius: 4px; /* Tail effect */
+        }
+        .message-bubble.ai {
+            background-color: #33334d; /* Darker grey for AI */
+            color: #e0e0e0;
+            border-bottom-left-radius: 4px; /* Tail effect */
+        }
+        .message-bubble strong {
+            color: #ffe066; /* Yellow for highlights */
+        }
+
+        .input-area {
+            display: flex;
+            width: 100%;
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+        .input-area textarea {
+            flex-grow: 1;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid #6a0dad; /* Purple border */
+            background-color: #0f0f1c; /* Match chat area */
+            color: #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            resize: vertical; /* Allow vertical resize */
+            min-height: 40px; /* Min height for single line */
+            max-height: 120px; /* Max height before scroll */
+            transition: border-color 0.2s;
+        }
+        .input-area textarea:focus {
+            border-color: #a020f0;
+            box-shadow: 0 0 0 3px rgba(160, 32, 240, 0.2);
+        }
+        .input-area button {
+            background: linear-gradient(45deg, #a020f0, #c052ff); /* Purple send button */
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 8px rgba(160, 32, 240, 0.3);
+        }
+        .input-area button:hover {
+            background: linear-gradient(45deg, #8000c0, #a020f0);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(160, 32, 240, 0.4);
+        }
+        .input-area button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(160, 32, 240, 0.2);
+        }
+        .input-area button:disabled {
+            background: #4a4a66;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #a020f0; /* Purple spinner */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .play-again-btn {
+            background: linear-gradient(45deg, #2ecc71, #27ae60); /* Green play again */
+            margin-top: 1.5rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 8px rgba(46, 204, 113, 0.3);
+        }
+        .play-again-btn:hover {
+            background: linear-gradient(45deg, #27ae60, #229a53);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(46, 204, 113, 0.4);
+        }
+        .confidence-meter {
+            background-color: #0f0f1c;
+            border: 1px solid #a020f0;
+            border-radius: 5px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            color: #e0b0ff;
+            text-shadow: 0 0 5px rgba(160, 32, 240, 0.5);
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        /* Yes/No Buttons Container */
+        .yes-no-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .yes-no-buttons button {
+            flex-grow: 1;
+            padding: 0.8rem 1.2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+        .yes-no-buttons button#yesBtn {
+            background: linear-gradient(45deg, #2ecc71, #27ae60); /* Green for Yes */
+            color: white;
+        }
+        .yes-no-buttons button#yesBtn:hover {
+            background: linear-gradient(45deg, #27ae60, #229a53);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(46, 204, 113, 0.4);
+        }
+        .yes-no-buttons button#noBtn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b); /* Red for No */
+            color: white;
+        }
+        .yes-no-buttons button#noBtn:hover {
+            background: linear-gradient(45deg, #c0392b, #a53023);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(231, 76, 60, 0.4);
+        }
+        .yes-no-buttons button:disabled {
+            background: #4a4a66;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Dynamic Option Buttons Container */
+        #dynamicOptionButtonsContainer {
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping */
+            justify-content: center;
+            gap: 0.8rem; /* Space between buttons */
+            width: 100%;
+            margin-top: 1rem;
+        }
+        #dynamicOptionButtonsContainer button {
+            background: linear-gradient(45deg, #00bfff, #007bb6); /* Blueish gradient */
+            color: white;
+            padding: 0.7rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #dynamicOptionButtonsContainer button:hover {
+            background: linear-gradient(45deg, #009acd, #005f8f);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        #dynamicOptionButtonsContainer button:disabled {
+            background: #4a4a66;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        #dynamicOptionButtonsContainer.hidden {
+            display: none;
+        }
+
+        /* Language Selector */
+        .language-select-container {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 10;
+        }
+        .language-select-container select {
+            background-color: #33334d;
+            color: #e0e0e0;
+            border: 1px solid #6a0dad;
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .language-select-container select:focus {
+            border-color: #a020f0;
+            box-shadow: 0 0 0 2px rgba(160, 32, 240, 0.2);
+        }
+
+        /* Ad Button inside game messages (similar to memory game) */
+        .message-bubble .ad-button {
+            background: linear-gradient(45deg, #6a0dad, #8a2be2); /* Purple gradient for ad button */
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 0.8rem; /* Space from message text */
+            box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
+        }
+        .message-bubble .ad-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(106, 13, 173, 0.4);
+            background: linear-gradient(45deg, #58008c, #7a00d8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Naxxivo Getch AI: The AI Detective</h1>
+
+        <div class="language-select-container">
+            <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="bn">বাংলা</option>
+            </select>
+        </div>
+
+        <div class="chat-area" id="chatArea">
+            <!-- Chat messages will be appended here -->
+        </div>
+
+        <div class="input-area">
+            <textarea id="userInput"></textarea>
+            <button id="sendBtn"></button>
+        </div>
+
+        <div class="yes-no-buttons">
+            <button id="yesBtn"></button>
+            <button id="noBtn"></button>
+        </div>
+
+        <div id="dynamicOptionButtonsContainer" class="hidden">
+            <!-- Dynamic answer options will be appended here -->
+        </div>
+
+        <button id="playAgainBtn" class="play-again-btn hidden"></button>
+    </div>
+
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const languageSelect = document.getElementById('languageSelect');
+        const dynamicOptionButtonsContainer = document.getElementById('dynamicOptionButtonsContainer');
+
+        // Gemini API Configuration
+        const GEMINI_API_KEY = ""; 
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+        // Chat history to maintain conversation context
+        let chatHistory = [];
+        let isAITurn = false;
+        let gameEnded = false;
+        let currentLanguage = localStorage.getItem('getchAILanguage') || 'en';
+
+        // --- Ad Variables ---
+        const adUrls = [
+            "https://www.profitableratecpm.com/behfaukx?key=e06b4978e6717c66764a4c198fd4624a",
+            "https://www.profitableratecpm.com/t9nuenmt4?key=0b825e0f3d9613e979b9cf67f3ff7341",
+            "https://www.profitableratecpm.com/ksieyp4xx?key=e7e39969c466de8a68bcc3badbf5a42f",
+            "https://www.profitableratecpm.com/hbxeum1x?key=53dacefc81dcca0177fddbc02b63680c"
+        ];
+        let currentAdIndex = 0;
+        const AD_COOLDOWN_GAMES = 3; 
+        let adShowCooldownCounter = 0; // Tracks games played since last ad click
+
+        // --- Localization Texts ---
+        const translations = {
+            en: {
+                title: "Naxxivo Getch AI: The AI Detective", /* Updated title */
+                userInputPlaceholder: "Your answer...",
+                sendButton: "Send",
+                yesButton: "Yes",
+                noButton: "No",
+                playAgainButton: "Play Again",
+                aiThinking: "AI is thinking...",
+                aiTyping: "AI is typing...",
+                aiApiError: "There was an error communicating with the AI. Please check your internet connection or try again later.",
+                aiUnexpectedResponse: "Sorry, I couldn't generate a response. Please try again.",
+                initialAiPrompt: (lang) => `You are an object-guessing AI detective named Getch AI. Your goal is to figure out what real-world object the user is holding or thinking about by asking smart, clear, and concise yes/no or category-based questions.
+                Respond in ${lang === 'en' ? 'English' : 'Bengali (Bangla)'}.
+                Maintain a curious and conversational tone.
+                You will ask one question at a time.
+                Do not guess until you are confident you know the object.
+                If you are confident, make a guess by stating: 'I think you are holding a **[object]**.' or 'I think you are thinking of a **[object]**.' You MUST bold the guessed object. You can optionally add your confidence percentage at the end, like: 'I am 90% confident.'
+                If you want to offer multiple choice options for a question, include them at the very end of your question, formatted as [OPTIONS: option1, option2, option3]. For example: "Is it a living thing? [OPTIONS: Yes, No]" or "What is its main color? [OPTIONS: Red, Blue, Green, Other]". Ensure options are relevant to the question.
+                Start by asking the user to provide an initial clue or to simply say 'I am holding an object.'`,
+                userInitialClue: "I am holding an object.",
+                aiGuessPrefixHolding: "I think you are holding a ",
+                aiGuessPrefixThinking: "I think you are thinking of a ",
+                aiGuessSuffix: ".",
+                aiConfidenceSuffix: "I am",
+                confidenceWord: "Confidence",
+                gameOver: "Game Over!",
+                gameEndedMessage: "Game Over! You can play again.",
+                supportNaxxivo: "Support Naxxivo" /* New text */
+            },
+            bn: {
+                title: "নাক্সিভো গেচ এআই: এআই ডিটেকটিভ", /* Updated title */
+                userInputPlaceholder: "আপনার উত্তর...",
+                sendButton: "পাঠান",
+                yesButton: "হ্যাঁ",
+                noButton: "না",
+                playAgainButton: "আবার খেলুন",
+                aiThinking: "AI ভাবছে...",
+                aiTyping: "AI টাইপ করছে...",
+                aiApiError: "AI-এর সাথে যোগাযোগে সমস্যা হয়েছে। আপনার ইন্টারনেট সংযোগ পরীক্ষা করুন বা পরে আবার চেষ্টা করুন।",
+                aiUnexpectedResponse: "দুঃখিত, আমি উত্তর তৈরি করতে পারিনি। আবার চেষ্টা করুন।",
+                initialAiPrompt: (lang) => `তুমি একটি অবজেক্ট অনুমানকারী AI ডিটেকটিভ যার নাম গেচ এআই (Getch AI)। তোমার লক্ষ্য হলো ব্যবহারকারী কী বাস্তব জগতের জিনিস ধরে আছে বা কী নিয়ে ভাবছে তা অনুমান করা, স্মার্ট, পরিষ্কার এবং সংক্ষিপ্ত হ্যাঁ/না বা ক্যাটাগরি-ভিত্তিক প্রশ্ন জিজ্ঞাসা করে।
+                ${lang === 'en' ? 'Respond in English.' : 'বাংলায় (Bengali) উত্তর দেবে।'}
+                একটি কৌতূহলী এবং কথোপকথনমূলক সুর বজায় রাখবে।
+                তুমি একবারে একটি প্রশ্ন জিজ্ঞাসা করবে।
+                তুমি বস্তুটি নিশ্চিতভাবে না জানা পর্যন্ত অনুমান করবে না।
+                যদি তুমি নিশ্চিত হও, তাহলে এই বাক্যটি ব্যবহার করে অনুমান করবে: 'আমি মনে করি তুমি একটি **[বস্তুর নাম]** ধরে আছো।' অথবা 'আমি মনে করি তুমি **[বস্তুর নাম]** এর কথা ভাবছো।' তোমাকে অনুমান করা বস্তুর নামটি অবশ্যই বোল্ড করতে হবে (**text** দিয়ে)। তুমি ঐচ্ছিকভাবে শেষে তোমার আত্মবিশ্বাসের শতাংশ যোগ করতে পারো, যেমন: 'আমি 90% নিশ্চিত।'
+                যদি তুমি প্রশ্নের জন্য একাধিক পছন্দের অপশন দিতে চাও, তাহলে তোমার প্রশ্নের শেষে [OPTIONS: অপশন1, অপশন2, অপশন3] এই ফরম্যাটে সেগুলো যোগ করবে। উদাহরণস্বরূপ: "এটা কি খাবার জিনিস? [OPTIONS: হ্যাঁ, না]" অথবা "এটার প্রধান উপাদান কী? [OPTIONS: প্লাস্টিক, ধাতু, কাঠ, অন্য কিছু]"। নিশ্চিত করবে অপশনগুলো প্রশ্নের সাথে প্রাসঙ্গিক।
+                ব্যবহারকারীকে একটি প্রাথমিক ক্লু দিতে বা সহজভাবে 'আমি আমার হাতে একটি জিনিস নিয়ে আছি।' বলতে অনুরোধ করে শুরু করো।
+                মনে রাখবে, প্রতি ধাপে একটি প্রশ্নে লেগে থাকবে এবং নির্ভুল হবে।`,
+                userInitialClue: "আমি আমার হাতে একটি জিনিস নিয়ে আছি।",
+                aiGuessPrefixHolding: "আমি মনে করি তুমি একটি ",
+                aiGuessPrefixThinking: "আমি মনে করি তুমি ",
+                aiGuessSuffix: " ধরে আছো।",
+                aiConfidenceSuffix: "আমি",
+                confidenceWord: "আত্মবিশ্বাস",
+                gameOver: "গেম শেষ!",
+                gameEndedMessage: "গেম শেষ! আপনি আবার খেলতে পারেন।",
+                supportNaxxivo: "নাক্সিভোকে সমর্থন করুন" /* New text */
+            }
+        };
+
+        // --- Utility Functions ---
+
+        /**
+         * Updates all static UI texts based on the current language.
+         */
+        function updateUIText() {
+            const t = translations[currentLanguage];
+            document.querySelector('h1').textContent = t.title;
+            userInput.placeholder = t.userInputPlaceholder;
+            sendBtn.textContent = t.sendButton;
+            yesBtn.textContent = t.yesButton;
+            noBtn.textContent = t.noButton;
+            playAgainBtn.textContent = t.playAgainButton;
+        }
+
+        /**
+         * Appends a message to the chat area.
+         * @param {string} text - The message text.
+         * @param {string} sender - 'user' or 'ai'.
+         * @param {number} [confidence] - Optional confidence percentage for AI guesses.
+         * @param {boolean} [addAdButton] - Whether to add the Support Naxxivo ad button (only for AI guess/game over).
+         */
+        function appendMessage(text, sender, confidence = null, addAdButton = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message', sender);
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble', sender);
+            bubble.innerHTML = text;
+
+            if (sender === 'ai' && confidence !== null) {
+                const confidenceSpan = document.createElement('span');
+                confidenceSpan.classList.add('confidence-meter');
+                confidenceSpan.textContent = `${translations[currentLanguage].confidenceWord}: ${confidence}%`;
+                bubble.appendChild(confidenceSpan);
+            }
+
+            if (addAdButton && sender === 'ai') { // Only add ad button for AI's final message
+                const adButton = document.createElement('button');
+                adButton.textContent = translations[currentLanguage].supportNaxxivo;
+                adButton.className = "ad-button";
+                adButton.onclick = () => {
+                    window.open(adUrls[currentAdIndex], '_blank');
+                    currentAdIndex = (currentAdIndex + 1) % adUrls.length;
+                    adShowCooldownCounter = AD_COOLDOWN_GAMES; // Set cooldown after click
+                    adButton.style.display = 'none'; // Hide button immediately after click
+                };
+                bubble.appendChild(adButton);
+            }
+
+            messageDiv.appendChild(bubble);
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        /**
+         * Toggles the enabled state of input and send button.
+         * Yes/No and dynamic buttons are handled by generateDynamicOptionButtons.
+         * @param {boolean} enable - True to enable, false to disable.
+         */
+        function toggleInputState(enable) {
+            userInput.disabled = !enable;
+            sendBtn.disabled = !enable;
+            userInput.placeholder = enable ? translations[currentLanguage].userInputPlaceholder : translations[currentLanguage].aiThinking;
+        }
+
+        /**
+         * Generates and displays dynamic option buttons based on AI's response.
+         * Also controls the state of Yes/No buttons.
+         * @param {Array<string>|null} options - Array of option texts, or null to hide.
+         */
+        function generateDynamicOptionButtons(options) {
+            dynamicOptionButtonsContainer.innerHTML = ''; // Clear existing dynamic buttons
+            
+            if (options && options.length > 0) {
+                dynamicOptionButtonsContainer.classList.remove('hidden');
+                userInput.disabled = true; // Disable manual input
+                sendBtn.disabled = true; // Disable send button
+                yesBtn.disabled = true; // Disable Yes/No buttons
+                noBtn.disabled = true;
+
+                options.forEach(optionText => {
+                    const button = document.createElement('button');
+                    button.textContent = optionText;
+                    button.classList.add('px-4', 'py-2', 'rounded-lg', 'font-semibold', 'transition-all', 'duration-200', 'ease-in-out', 'text-white', 'hover:scale-105', 'active:scale-95');
+                    
+                    // Basic styling for options, can be more detailed
+                    if (optionText.toLowerCase() === translations[currentLanguage].yesButton.toLowerCase() ) {
+                        button.classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-700', 'hover:from-green-600', 'hover:to-green-800');
+                    } else if (optionText.toLowerCase() === translations[currentLanguage].noButton.toLowerCase()) {
+                         button.classList.add('bg-gradient-to-r', 'from-red-500', 'to-red-700', 'hover:from-red-600', 'hover:to-red-800');
+                    } else {
+                        button.classList.add('bg-gradient-to-r', 'from-blue-500', 'to-blue-700', 'hover:from-blue-600', 'hover:to-blue-800');
+                    }
+
+                    button.onclick = () => sendMessage(optionText);
+                    dynamicOptionButtonsContainer.appendChild(button);
+                });
+            } else {
+                dynamicOptionButtonsContainer.classList.add('hidden');
+                // Re-enable text input and send button, and Yes/No buttons if no dynamic options
+                if (!gameEnded) {
+                    toggleInputState(true); // Re-enable main input and send button
+                    yesBtn.disabled = false; // Re-enable Yes/No buttons
+                    noBtn.disabled = false;
+                }
+            }
+        }
+
+
+        /**
+         * Sends a request to the Gemini API.
+         * @param {string} userMessage - The user's input.
+         * @returns {Promise<string>} - The AI's response text.
+         */
+        async function getGeminiResponse(userMessage) {
+            isAITurn = true;
+            toggleInputState(false);
+            generateDynamicOptionButtons(null);
+
+            chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+            const loadingBubble = document.createElement('div');
+            loadingBubble.classList.add('chat-message', 'ai');
+            loadingBubble.innerHTML = `<div class="message-bubble ai"><span class="loading-spinner"></span> ${translations[currentLanguage].aiTyping}</div>`;
+            chatArea.appendChild(loadingBubble);
+            chatArea.scrollTop = chatArea.scrollHeight;
+
+            try {
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        temperature: 0.7,
+                    }
+                };
+
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                loadingBubble.remove();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiResponseText = result.candidates[0].content.parts[0].text;
+                    chatHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+                    return aiResponseText;
+                } else {
+                    console.error("Gemini API returned an unexpected structure:", result);
+                    return translations[currentLanguage].aiUnexpectedResponse;
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                loadingBubble.remove();
+                return translations[currentLanguage].aiApiError;
+            } finally {
+                isAITurn = false;
+                if (!gameEnded) {
+                    // Re-enable inputs based on what parseAIResponse finds.
+                    // This final re-enabling will be handled by the sendMessage logic.
+                }
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+        }
+
+        /**
+         * Parses AI's response to check for a guess and confidence.
+         * Also extracts dynamic options if provided by AI.
+         * @param {string} aiResponse - The AI's raw response text.
+         * @returns {object} - { type: 'question' | 'guess' | 'info', text: string, confidence: number | null, options: Array<string> | null }
+         */
+        function parseAIResponse(aiResponse) {
+            const t = translations[currentLanguage];
+            const optionsRegex = /\[OPTIONS:\s*(.+?)\]$/i; // Case-insensitive for OPTIONS
+            const optionsMatch = aiResponse.match(optionsRegex);
+            let options = null;
+            let cleanResponse = aiResponse;
+
+            if (optionsMatch && optionsMatch[1]) {
+                options = optionsMatch[1].split(',').map(opt => opt.trim());
+                cleanResponse = aiResponse.replace(optionsRegex, '').trim(); // Remove options part from text
+            }
+
+            const boldedObjectRegex = /\*\*(.+?)\*\*/; 
+            const objectMatch = cleanResponse.match(boldedObjectRegex);
+
+            let guessedObject = null;
+            if (objectMatch && objectMatch[1]) {
+                guessedObject = objectMatch[1].trim();
+            }
+
+            const confidenceRegex = /(?:confidence|nishchit|আত্মবিশ্বাস):\s*(\d+\.?\d*)%/i;
+            const confidenceMatch = cleanResponse.match(confidenceRegex);
+            const confidence = confidenceMatch ? parseFloat(confidenceMatch[1]) : null;
+
+            if (guessedObject) {
+                return { type: 'guess', text: cleanResponse, confidence: confidence, options: null };
+            }
+            return { type: 'question', text: cleanResponse, confidence: null, options: options };
+        }
+
+
+        /**
+         * Handles sending user input and getting AI response.
+         * @param {string} [presetAnswer] - Optional predefined answer (e.g., "Yes", "No").
+         */
+        async function sendMessage(presetAnswer = '') {
+            const userText = presetAnswer || userInput.value.trim();
+            if (!userText || isAITurn || gameEnded) return;
+
+            userInput.value = ''; // Clear typed input
+            appendMessage(userText, 'user'); // Display user's message immediately
+
+            const aiRawResponse = await getGeminiResponse(userText);
+            const parsed = parseAIResponse(aiRawResponse);
+
+            if (parsed.type === 'guess') {
+                // Determine if ad button should be shown based on cooldown
+                let shouldShowAdButton = false;
+                if (adShowCooldownCounter <= 0) {
+                    shouldShowAdButton = true;
+                    // Note: adShowCooldownCounter is reset to AD_COOLDOWN_GAMES inside adButton's onclick
+                } else {
+                    adShowCooldownCounter--; // Decrement if not showing ad this time
+                }
+
+                appendMessage(parsed.text, 'ai', parsed.confidence, shouldShowAdButton); // Pass shouldShowAdButton
+                gameEnded = true;
+                toggleInputState(false); // Disable all inputs (text, send)
+                generateDynamicOptionButtons(null); // Hide dynamic buttons (and disable yes/no)
+                playAgainBtn.classList.remove('hidden');
+            } else {
+                appendMessage(parsed.text, 'ai');
+                generateDynamicOptionButtons(parsed.options); // Generate dynamic buttons if options are provided
+            }
+        }
+
+        /**
+         * Resets the game state and UI for a new game.
+         */
+        function resetGame() {
+            chatHistory = []; // Clear chat history
+            gameEnded = false;
+            isAITurn = false;
+            chatArea.innerHTML = ''; // Clear chat display
+            userInput.value = '';
+            toggleInputState(true); // Enable general input and send button
+            generateDynamicOptionButtons(null); // Hide any existing dynamic buttons and re-enable yes/no
+            playAgainBtn.classList.add('hidden');
+            
+            startAIGame();
+        }
+
+        /**
+         * Starts the initial AI interaction.
+         */
+        async function startAIGame() {
+            const t = translations[currentLanguage];
+            const initialPrompt = t.initialAiPrompt(currentLanguage);
+
+            const aiRawResponse = await getGeminiResponse(initialPrompt);
+            const parsed = parseAIResponse(aiRawResponse);
+            appendMessage(parsed.text, 'ai');
+
+            generateDynamicOptionButtons(parsed.options); // Handle button state after AI's first message
+        }
+
+        // --- Event Listeners ---
+        sendBtn.addEventListener('click', () => sendMessage());
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+        yesBtn.addEventListener('click', () => sendMessage(translations[currentLanguage].yesButton));
+        noBtn.addEventListener('click', () => sendMessage(translations[currentLanguage].noButton));
+        playAgainBtn.addEventListener('click', resetGame);
+
+        // Language selection
+        languageSelect.addEventListener('change', (event) => {
+            currentLanguage = event.target.value;
+            localStorage.setItem('getchAILanguage', currentLanguage); // Save preference
+            updateUIText(); // Update static UI elements
+            resetGame(); // Restart game with new language, which will trigger new initial prompt
+        });
+
+        // --- Initial Load ---
+        window.onload = () => {
+            languageSelect.value = currentLanguage; // Set dropdown to current language
+            updateUIText(); // Update UI text on initial load
+            resetGame(); // Call reset to handle initial setup including starting AI
+        };
+
+    </script>
+</body>
+</html>
